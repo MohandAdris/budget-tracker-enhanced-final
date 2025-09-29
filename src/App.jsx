@@ -100,13 +100,24 @@ function App() {
   const [budgetInput, setBudgetInput] = useState('')
   const [projectDuration, setProjectDuration] = useState(1)
   const [editingExpense, setEditingExpense] = useState(null)
-  const [expenseBlocks] = useState(DEFAULT_EXPENSE_BLOCKS)
+  const [expenseBlocks, setExpenseBlocks] = useState(DEFAULT_EXPENSE_BLOCKS)
   const [reportHistory, setReportHistory] = useState([])
   const [activeTab, setActiveTab] = useState('tracker')
   const [showBlockDialog, setShowBlockDialog] = useState(false)
   const [selectedBlock, setSelectedBlock] = useState(null)
   const [blockQuantity, setBlockQuantity] = useState(1)
   const [selectedTier, setSelectedTier] = useState('')
+  
+  // Admin Dashboard states
+  const [showCreateBlockDialog, setShowCreateBlockDialog] = useState(false)
+  const [editingBlock, setEditingBlock] = useState(null)
+  const [newBlock, setNewBlock] = useState({
+    name: '',
+    category: '',
+    description: '',
+    tiers: [{ range: '', price: 0, label: '' }]
+  })
+  
   const [newExpense, setNewExpense] = useState({
     name: '',
     category: '',
@@ -121,6 +132,7 @@ function App() {
     const savedBudget = localStorage.getItem('budget')
     const savedDuration = localStorage.getItem('projectDuration')
     const savedHistory = localStorage.getItem('reportHistory')
+    const savedBlocks = localStorage.getItem('expenseBlocks')
     
     if (savedExpenses) {
       setExpenses(JSON.parse(savedExpenses))
@@ -133,6 +145,9 @@ function App() {
     }
     if (savedHistory) {
       setReportHistory(JSON.parse(savedHistory))
+    }
+    if (savedBlocks) {
+      setExpenseBlocks(JSON.parse(savedBlocks))
     }
   }, [])
 
@@ -152,6 +167,10 @@ function App() {
   useEffect(() => {
     localStorage.setItem('reportHistory', JSON.stringify(reportHistory))
   }, [reportHistory])
+
+  useEffect(() => {
+    localStorage.setItem('expenseBlocks', JSON.stringify(expenseBlocks))
+  }, [expenseBlocks])
 
   const handleSetBudget = () => {
     const budgetValue = parseFloat(budgetInput)
@@ -328,6 +347,96 @@ function App() {
     }
 
     setReportHistory([report, ...reportHistory])
+  }
+
+  // Admin Dashboard Functions
+  const handleCreateBlock = () => {
+    if (newBlock.name && newBlock.category && newBlock.description && newBlock.tiers.length > 0) {
+      const block = {
+        id: Date.now(),
+        name: newBlock.name,
+        category: newBlock.category,
+        description: newBlock.description,
+        tiers: newBlock.tiers.filter(tier => tier.range && tier.price > 0 && tier.label)
+      }
+      setExpenseBlocks([...expenseBlocks, block])
+      setNewBlock({
+        name: '',
+        category: '',
+        description: '',
+        tiers: [{ range: '', price: 0, label: '' }]
+      })
+      setShowCreateBlockDialog(false)
+    }
+  }
+
+  const handleEditBlock = (block) => {
+    setEditingBlock(block)
+    setNewBlock({
+      name: block.name,
+      category: block.category,
+      description: block.description,
+      tiers: [...block.tiers]
+    })
+    setShowCreateBlockDialog(true)
+  }
+
+  const handleUpdateBlock = () => {
+    if (editingBlock && newBlock.name && newBlock.category && newBlock.description) {
+      const updatedBlocks = expenseBlocks.map(block =>
+        block.id === editingBlock.id
+          ? {
+              ...editingBlock,
+              name: newBlock.name,
+              category: newBlock.category,
+              description: newBlock.description,
+              tiers: newBlock.tiers.filter(tier => tier.range && tier.price > 0 && tier.label)
+            }
+          : block
+      )
+      setExpenseBlocks(updatedBlocks)
+      setEditingBlock(null)
+      setNewBlock({
+        name: '',
+        category: '',
+        description: '',
+        tiers: [{ range: '', price: 0, label: '' }]
+      })
+      setShowCreateBlockDialog(false)
+    }
+  }
+
+  const handleDeleteBlock = (id) => {
+    setExpenseBlocks(expenseBlocks.filter(block => block.id !== id))
+  }
+
+  const addTier = () => {
+    setNewBlock({
+      ...newBlock,
+      tiers: [...newBlock.tiers, { range: '', price: 0, label: '' }]
+    })
+  }
+
+  const updateTier = (index, field, value) => {
+    const updatedTiers = newBlock.tiers.map((tier, i) =>
+      i === index ? { ...tier, [field]: field === 'price' ? parseFloat(value) || 0 : value } : tier
+    )
+    setNewBlock({ ...newBlock, tiers: updatedTiers })
+  }
+
+  const removeTier = (index) => {
+    if (newBlock.tiers.length > 1) {
+      setNewBlock({
+        ...newBlock,
+        tiers: newBlock.tiers.filter((_, i) => i !== index)
+      })
+    }
+  }
+
+  const resetToDefaults = () => {
+    if (confirm('Are you sure you want to reset all expense blocks to default? This will delete all custom blocks.')) {
+      setExpenseBlocks(DEFAULT_EXPENSE_BLOCKS)
+    }
   }
 
   const loadReport = (report) => {
@@ -705,22 +814,148 @@ function App() {
 
           {/* Admin Dashboard Tab */}
           <TabsContent value="admin">
-            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="h-5 w-5 text-blue-600" />
-                  Admin Dashboard
-                </CardTitle>
-                <CardDescription>Manage expense blocks and system settings</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <Settings className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                  <h3 className="text-lg font-semibold mb-2">Admin Features Coming Soon</h3>
-                  <p className="text-gray-600">Block management and advanced settings will be available in the next update.</p>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="space-y-6">
+              {/* Block Management Header */}
+              <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Settings className="h-5 w-5 text-blue-600" />
+                    Admin Dashboard
+                  </CardTitle>
+                  <CardDescription>Manage expense blocks and system settings</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex gap-4">
+                    <Button onClick={() => setShowCreateBlockDialog(true)} className="bg-blue-600 hover:bg-blue-700">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create New Block
+                    </Button>
+                    <Button onClick={resetToDefaults} variant="outline" className="text-red-600 border-red-300 hover:bg-red-50">
+                      Reset to Defaults
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Expense Blocks Management */}
+              <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Blocks className="h-5 w-5 text-purple-600" />
+                    Expense Blocks ({expenseBlocks.length})
+                  </CardTitle>
+                  <CardDescription>Manage your expense blocks and pricing tiers</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {expenseBlocks.map((block) => (
+                      <Card key={block.id} className="border-2 hover:border-blue-300 transition-colors">
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between mb-2">
+                            <h3 className="font-semibold text-gray-900">{block.name}</h3>
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditBlock(block)}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteBlock(block.id)}
+                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                          <p className="text-sm text-gray-600 mb-2">{block.description}</p>
+                          <Badge variant="secondary" className="mb-3">{block.category}</Badge>
+                          <div className="space-y-1">
+                            <h4 className="text-xs font-medium text-gray-700">Pricing Tiers:</h4>
+                            {block.tiers.map((tier, index) => (
+                              <div key={index} className="text-xs text-gray-500 flex justify-between">
+                                <span>{tier.label}:</span>
+                                <span className="font-medium">₪{tier.price}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* System Statistics */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-blue-100 rounded-lg">
+                        <Blocks className="h-6 w-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Total Blocks</p>
+                        <p className="text-2xl font-bold">{expenseBlocks.length}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-green-100 rounded-lg">
+                        <FileText className="h-6 w-6 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Total Expenses</p>
+                        <p className="text-2xl font-bold">{expenses.length}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-purple-100 rounded-lg">
+                        <History className="h-6 w-6 text-purple-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Saved Reports</p>
+                        <p className="text-2xl font-bold">{reportHistory.length}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Category Distribution */}
+              <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle>Block Distribution by Category</CardTitle>
+                  <CardDescription>Overview of expense blocks across different categories</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {EXPENSE_CATEGORIES.map(category => {
+                      const count = expenseBlocks.filter(block => block.category === category).length
+                      return count > 0 ? (
+                        <div key={category} className="p-3 bg-gray-50 rounded-lg">
+                          <p className="text-sm font-medium text-gray-900">{category}</p>
+                          <p className="text-lg font-bold text-blue-600">{count} block{count !== 1 ? 's' : ''}</p>
+                        </div>
+                      ) : null
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* Report History Tab */}
@@ -915,6 +1150,159 @@ function App() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Create/Edit Block Dialog */}
+      <Dialog open={showCreateBlockDialog} onOpenChange={setShowCreateBlockDialog}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingBlock ? 'Edit Block' : 'Create New Block'}</DialogTitle>
+            <DialogDescription>
+              {editingBlock ? 'Update the expense block details' : 'Create a new expense block with custom pricing tiers'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6">
+            {/* Basic Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="block-name">Block Name</Label>
+                <Input
+                  id="block-name"
+                  placeholder="e.g., Video Shooting"
+                  value={newBlock.name}
+                  onChange={(e) => setNewBlock({ ...newBlock, name: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="block-category">Category</Label>
+                <Select value={newBlock.category} onValueChange={(value) => setNewBlock({ ...newBlock, category: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {EXPENSE_CATEGORIES.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="block-description">Description</Label>
+              <Textarea
+                id="block-description"
+                placeholder="Brief description of the service..."
+                value={newBlock.description}
+                onChange={(e) => setNewBlock({ ...newBlock, description: e.target.value })}
+              />
+            </div>
+
+            {/* Pricing Tiers */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <Label className="text-base font-semibold">Pricing Tiers</Label>
+                <Button onClick={addTier} variant="outline" size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Tier
+                </Button>
+              </div>
+              
+              <div className="space-y-4">
+                {newBlock.tiers.map((tier, index) => (
+                  <Card key={index} className="p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-medium">Tier {index + 1}</h4>
+                      {newBlock.tiers.length > 1 && (
+                        <Button
+                          onClick={() => removeTier(index)}
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div>
+                        <Label className="text-sm">Range/Type</Label>
+                        <Input
+                          placeholder="e.g., 1-3, 4+, basic"
+                          value={tier.range}
+                          onChange={(e) => updateTier(index, 'range', e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-sm">Price (₪)</Label>
+                        <Input
+                          type="number"
+                          placeholder="0"
+                          value={tier.price}
+                          onChange={(e) => updateTier(index, 'price', e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-sm">Label</Label>
+                        <Input
+                          placeholder="e.g., 1-3 videos, Basic package"
+                          value={tier.label}
+                          onChange={(e) => updateTier(index, 'label', e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
+
+            {/* Preview */}
+            {newBlock.name && newBlock.category && newBlock.description && (
+              <div>
+                <Label className="text-base font-semibold">Preview</Label>
+                <Card className="mt-2 p-4 bg-gray-50">
+                  <h3 className="font-semibold text-gray-900 mb-1">{newBlock.name}</h3>
+                  <p className="text-sm text-gray-600 mb-2">{newBlock.description}</p>
+                  <Badge variant="secondary" className="mb-2">{newBlock.category}</Badge>
+                  <div className="space-y-1">
+                    {newBlock.tiers.filter(tier => tier.range && tier.price > 0 && tier.label).map((tier, index) => (
+                      <div key={index} className="text-xs text-gray-500">
+                        {tier.label}: ₪{tier.price}
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <Button 
+                onClick={editingBlock ? handleUpdateBlock : handleCreateBlock} 
+                className="flex-1"
+                disabled={!newBlock.name || !newBlock.category || !newBlock.description || newBlock.tiers.filter(tier => tier.range && tier.price > 0 && tier.label).length === 0}
+              >
+                {editingBlock ? 'Update Block' : 'Create Block'}
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowCreateBlockDialog(false)
+                  setEditingBlock(null)
+                  setNewBlock({
+                    name: '',
+                    category: '',
+                    description: '',
+                    tiers: [{ range: '', price: 0, label: '' }]
+                  })
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
