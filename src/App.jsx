@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/ui/card';
-import { Button } from './components/ui/button';
-import { Input } from './components/ui/input';
-import { Label } from './components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
-import { Badge } from './components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select';
-import { Textarea } from './components/ui/textarea';
-import { Switch } from './components/ui/switch';
-import { Progress } from './components/ui/progress';
-import { Separator } from './components/ui/separator';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Area, AreaChart } from 'recharts';
 import { Calculator, Settings, History, Plus, Edit, Trash2, Download, Upload, BarChart3, PieChart as PieChartIcon, TrendingUp, Users, DollarSign, Calendar, FileText, Database, Shield, Bell, Palette, Globe, Zap, Target, Award, Clock, Filter, Search, RefreshCw, Save, Copy, Eye, EyeOff, AlertTriangle, CheckCircle, XCircle, Info, Star, Heart, Bookmark, Share2, Mail, Phone, MapPin, Camera, Video, Mic, Image, File, Link, Tag, Flag, Archive, Trash, Lock, Unlock, Home, Building, Briefcase, CreditCard, ShoppingCart, Package, Truck, Plane, Car, Train, Bus, Bike, Walk } from 'lucide-react';
 
